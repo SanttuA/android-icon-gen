@@ -2,7 +2,7 @@
 
 Android Icon Gen is a Python 3.14 desktop and CLI app for creating Android launcher icons from a
 user-provided image. It generates legacy launcher PNGs, adaptive icon layers, Android resource XML,
-a 512x512 Google Play icon, and an optional zip archive.
+a 512x512 Google Play icon, React Native Expo icon assets, and an optional zip archive.
 
 ## Requirements
 
@@ -21,9 +21,10 @@ uv sync
 uv run android-icon-gen gui
 ```
 
-The desktop app lets you choose a source image, optional adaptive icon layer overrides, an icon
-resource name, a background color, and an output folder. Background color can be chosen with the
-picker, typed as `#RGB`, `#RRGGBB`, or `#RRGGBBAA`, or left blank to auto-pick from image edges.
+The desktop app lets you choose a source image, output target, optional adaptive icon layer
+overrides, an icon resource name, a background color, and an output folder. Background color can be
+chosen with the picker, typed as `#RGB`, `#RRGGBB`, or `#RRGGBBAA`, or left blank to auto-pick from
+image edges.
 
 ## CLI
 
@@ -36,6 +37,7 @@ Useful options:
 ```bash
 uv run android-icon-gen generate assets/app-icon.png \
   --output output \
+  --target android \
   --name ic_launcher \
   --foreground assets/foreground.png \
   --background assets/background.png \
@@ -50,9 +52,17 @@ Disable specific default outputs:
 uv run android-icon-gen generate assets/app-icon.png --output output --no-play-icon --no-zip
 ```
 
+Generate React Native Expo assets instead:
+
+```bash
+uv run android-icon-gen generate assets/app-icon.png --output output --target expo
+```
+
+Use `--target both` to write both Android resources and Expo assets in one run.
+
 ## Generated Output
 
-By default the generator writes:
+By default the Android target writes:
 
 - `res/mipmap-anydpi-v26/ic_launcher.xml`
 - `res/mipmap-anydpi-v26/ic_launcher_round.xml`
@@ -70,6 +80,21 @@ your manifest:
     android:roundIcon="@mipmap/ic_launcher_round">
 </application>
 ```
+
+The Expo target writes a copy-ready `expo/` folder:
+
+- `expo/assets/images/icon.png`
+- `expo/assets/images/adaptive-icon.png`
+- `expo/assets/images/adaptive-icon-background.png`
+- `expo/assets/images/monochrome-icon.png`
+- `expo/assets/images/splash-icon.png`
+- `expo/assets/images/favicon.png`
+- `expo/app.json.snippet`
+
+Copy the contents of `expo/` into your Expo project root, then merge the snippet into `app.json`.
+
+Zip archives are named `android-icons.zip` for Android, `expo-icons.zip` for Expo, and `icons.zip`
+when generating both targets.
 
 ## Development
 

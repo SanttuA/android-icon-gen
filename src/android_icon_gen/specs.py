@@ -9,6 +9,8 @@ from pathlib import PurePosixPath
 ANDROID_XML_NAMESPACE = "http://schemas.android.com/apk/res/android"
 DEFAULT_ICON_NAME = "ic_launcher"
 ZIP_NAME = "android-icons.zip"
+EXPO_ZIP_NAME = "expo-icons.zip"
+COMBINED_ZIP_NAME = "icons.zip"
 
 DENSITY_ORDER = ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
 

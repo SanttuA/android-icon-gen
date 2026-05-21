@@ -18,13 +18,19 @@ from android_icon_gen.images import (
     make_round_icon,
     parse_hex_color,
 )
-from android_icon_gen.models import GenerationConfig
+from android_icon_gen.models import GenerationConfig, OutputTarget
 from android_icon_gen.specs import DEFAULT_ICON_NAME
 
 BACKGROUND_COLOR_HELP = (
     "Optional: choose a color or type #RGB, #RRGGBB, or #RRGGBBAA. "
     "Leave blank to auto-pick from image edges."
 )
+OUTPUT_TARGET_LABELS = {
+    OutputTarget.ANDROID: "Android",
+    OutputTarget.EXPO: "Expo",
+    OutputTarget.BOTH: "Android + Expo",
+}
+OUTPUT_TARGETS_BY_LABEL = {label: target for target, label in OUTPUT_TARGET_LABELS.items()}
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +44,7 @@ class GuiFormState:
     background: str
     monochrome: str
     background_color: str
+    output_target: str
     create_zip: bool
     include_play_icon: bool
 
@@ -64,6 +71,7 @@ def build_config_from_state(state: GuiFormState) -> GenerationConfig:
         background_color=state.background_color.strip() or None,
         create_zip=state.create_zip,
         include_play_icon=state.include_play_icon,
+        output_target=output_target_from_display(state.output_target),
     )
 
 
@@ -95,6 +103,20 @@ def background_color_display(value: str) -> BackgroundColorDisplay:
     return BackgroundColorDisplay(text="", color=f"#{red:02x}{green:02x}{blue:02x}", valid=True)
 
 
+def output_target_from_display(value: str) -> OutputTarget:
+    """Return an output target from a GUI label or raw target value."""
+
+    if value in OUTPUT_TARGETS_BY_LABEL:
+        return OUTPUT_TARGETS_BY_LABEL[value]
+    return OutputTarget(value)
+
+
+def output_target_display_values() -> tuple[str, ...]:
+    """Return human-readable output target labels for GUI controls."""
+
+    return tuple(OUTPUT_TARGET_LABELS.values())
+
+
 class IconGeneratorApp:
     """Desktop app controller and view."""
 
@@ -110,6 +132,7 @@ class IconGeneratorApp:
         self.background_var = tk.StringVar()
         self.monochrome_var = tk.StringVar()
         self.background_color_var = tk.StringVar()
+        self.output_target_var = tk.StringVar(value=OUTPUT_TARGET_LABELS[OutputTarget.ANDROID])
         self.zip_var = tk.BooleanVar(value=True)
         self.play_icon_var = tk.BooleanVar(value=True)
         self._preview_images: list[object] = []
@@ -135,7 +158,8 @@ class IconGeneratorApp:
         self._path_row(form, 0, "Source image", self.source_var, self._choose_source)
         self._path_row(form, 1, "Output folder", self.output_var, self._choose_output_dir)
         self._entry_row(form, 2, "Icon name", self.icon_name_var)
-        self._background_color_row(form, 3)
+        self._output_target_row(form, 3)
+        self._background_color_row(form, 4)
 
         advanced = ttk.LabelFrame(outer, text="Adaptive layer overrides", padding=12)
         advanced.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(12, 12))
@@ -199,6 +223,15 @@ class IconGeneratorApp:
             sticky="ew",
             padx=(8, 0),
         )
+
+    def _output_target_row(self, parent: tk.Misc, row: int) -> None:
+        ttk.Label(parent, text="Output target").grid(row=row, column=0, sticky="w", pady=4)
+        ttk.Combobox(
+            parent,
+            textvariable=self.output_target_var,
+            values=output_target_display_values(),
+            state="readonly",
+        ).grid(row=row, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=4)
 
     def _background_color_row(self, parent: tk.Misc, row: int) -> None:
         ttk.Label(parent, text="Background color").grid(row=row, column=0, sticky="w", pady=4)
@@ -294,6 +327,7 @@ class IconGeneratorApp:
             background=self.background_var.get(),
             monochrome=self.monochrome_var.get(),
             background_color=self.background_color_var.get(),
+            output_target=self.output_target_var.get(),
             create_zip=self.zip_var.get(),
             include_play_icon=self.play_icon_var.get(),
         )

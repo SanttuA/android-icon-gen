@@ -8,6 +8,9 @@ from PIL import Image
 from android_icon_gen.images import (
     has_transparency,
     load_rgba_image,
+    make_expo_adaptive_foreground,
+    make_expo_app_icon,
+    make_expo_favicon,
     make_monochrome_layer,
     make_round_icon,
     parse_hex_color,
@@ -49,3 +52,30 @@ def test_monochrome_layer_preserves_shape_alpha() -> None:
 
     assert cast(tuple[int, int, int, int], monochrome.getpixel((0, 0)))[3] == 0
     assert cast(tuple[int, int, int, int], monochrome.getpixel((32, 32)))[3] == 255
+
+
+def test_expo_app_icon_is_opaque() -> None:
+    source = Image.new("RGBA", (128, 128), (255, 255, 255, 0))
+    source.putpixel((64, 64), (255, 0, 0, 255))
+
+    icon = make_expo_app_icon(source, background_color=(10, 20, 30, 64))
+
+    assert icon.size == (1024, 1024)
+    assert icon.getchannel("A").getextrema() == (255, 255)
+
+
+def test_expo_adaptive_foreground_keeps_transparent_safe_zone() -> None:
+    source = Image.new("RGBA", (128, 128), (255, 0, 0, 255))
+
+    foreground = make_expo_adaptive_foreground(source, explicit_layer=False)
+
+    assert foreground.size == (1024, 1024)
+    assert cast(tuple[int, int, int, int], foreground.getpixel((0, 0)))[3] == 0
+
+
+def test_expo_favicon_is_48_px() -> None:
+    source = Image.new("RGBA", (128, 128), (255, 0, 0, 255))
+
+    favicon = make_expo_favicon(source)
+
+    assert favicon.size == (48, 48)
