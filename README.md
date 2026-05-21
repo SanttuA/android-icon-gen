@@ -22,7 +22,8 @@ uv run android-icon-gen gui
 ```
 
 The desktop app lets you choose a source image, optional adaptive icon layer overrides, an icon
-resource name, a background color, and an output folder.
+resource name, a background color, and an output folder. Background color can be chosen with the
+picker, typed as `#RGB`, `#RRGGBB`, or `#RRGGBBAA`, or left blank to auto-pick from image edges.
 
 ## CLI
 

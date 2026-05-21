@@ -6,7 +6,7 @@ import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import colorchooser, filedialog, messagebox, ttk
 
 from PIL import ImageTk
 
@@ -20,6 +20,11 @@ from android_icon_gen.images import (
 )
 from android_icon_gen.models import GenerationConfig
 from android_icon_gen.specs import DEFAULT_ICON_NAME
+
+BACKGROUND_COLOR_HELP = (
+    "Optional: choose a color or type #RGB, #RRGGBB, or #RRGGBBAA. "
+    "Leave blank to auto-pick from image edges."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +40,15 @@ class GuiFormState:
     background_color: str
     create_zip: bool
     include_play_icon: bool
+
+
+@dataclass(frozen=True, slots=True)
+class BackgroundColorDisplay:
+    """User-facing display state for the background color swatch."""
+
+    text: str
+    color: str | None
+    valid: bool
 
 
 def build_config_from_state(state: GuiFormState) -> GenerationConfig:
@@ -66,6 +80,21 @@ def _optional_path(value: str) -> Path | None:
     return Path(stripped) if stripped else None
 
 
+def background_color_display(value: str) -> BackgroundColorDisplay:
+    """Return the swatch display state for a raw background color value."""
+
+    try:
+        color = parse_hex_color(value)
+    except ValueError:
+        return BackgroundColorDisplay(text="Invalid", color=None, valid=False)
+
+    if color is None:
+        return BackgroundColorDisplay(text="Auto", color=None, valid=True)
+
+    red, green, blue, _alpha = color
+    return BackgroundColorDisplay(text="", color=f"#{red:02x}{green:02x}{blue:02x}", valid=True)
+
+
 class IconGeneratorApp:
     """Desktop app controller and view."""
 
@@ -86,6 +115,7 @@ class IconGeneratorApp:
         self._preview_images: list[object] = []
 
         self._build()
+        self._update_background_color_swatch()
         self.source_var.trace_add("write", self._on_preview_input_changed)
         self.background_color_var.trace_add("write", self._on_preview_input_changed)
 
@@ -105,7 +135,7 @@ class IconGeneratorApp:
         self._path_row(form, 0, "Source image", self.source_var, self._choose_source)
         self._path_row(form, 1, "Output folder", self.output_var, self._choose_output_dir)
         self._entry_row(form, 2, "Icon name", self.icon_name_var)
-        self._entry_row(form, 3, "Background color", self.background_color_var)
+        self._background_color_row(form, 3)
 
         advanced = ttk.LabelFrame(outer, text="Adaptive layer overrides", padding=12)
         advanced.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(12, 12))
@@ -170,6 +200,42 @@ class IconGeneratorApp:
             padx=(8, 0),
         )
 
+    def _background_color_row(self, parent: tk.Misc, row: int) -> None:
+        ttk.Label(parent, text="Background color").grid(row=row, column=0, sticky="w", pady=4)
+
+        color_controls = ttk.Frame(parent)
+        color_controls.grid(row=row, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=4)
+        color_controls.columnconfigure(0, weight=1)
+
+        ttk.Entry(color_controls, textvariable=self.background_color_var).grid(
+            row=0,
+            column=0,
+            sticky="ew",
+        )
+        self.background_color_swatch = tk.Label(
+            color_controls,
+            width=7,
+            relief="solid",
+            borderwidth=1,
+            anchor="center",
+        )
+        self.background_color_swatch.grid(row=0, column=1, sticky="ew", padx=(8, 8))
+        self._default_swatch_bg = str(self.background_color_swatch.cget("background"))
+        self._default_swatch_fg = str(self.background_color_swatch.cget("foreground"))
+
+        ttk.Button(
+            color_controls,
+            text="Choose...",
+            command=self._choose_background_color,
+        ).grid(row=0, column=2, sticky="e")
+        ttk.Label(color_controls, text=BACKGROUND_COLOR_HELP, wraplength=520).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            sticky="w",
+            pady=(4, 0),
+        )
+
     def _choose_source(self) -> None:
         self._choose_file(self.source_var)
 
@@ -199,7 +265,24 @@ class IconGeneratorApp:
         if path:
             self.output_var.set(path)
 
+    def _choose_background_color(self) -> None:
+        initial_color = background_color_display(self.background_color_var.get()).color
+        if initial_color is None:
+            _rgb, hex_color = colorchooser.askcolor(
+                parent=self.root,
+                title="Choose background color",
+            )
+        else:
+            _rgb, hex_color = colorchooser.askcolor(
+                initialcolor=initial_color,
+                parent=self.root,
+                title="Choose background color",
+            )
+        if isinstance(hex_color, str):
+            self.background_color_var.set(hex_color.lower())
+
     def _on_preview_input_changed(self, *_args: object) -> None:
+        self._update_background_color_swatch()
         self._update_preview()
 
     def _state(self) -> GuiFormState:
@@ -252,6 +335,22 @@ class IconGeneratorApp:
         self.square_preview.configure(image=square_photo, text="")
         self.round_preview.configure(image=round_photo, text="")
         self._set_warnings(())
+
+    def _update_background_color_swatch(self) -> None:
+        display = background_color_display(self.background_color_var.get())
+        if display.color is not None:
+            self.background_color_swatch.configure(
+                text="",
+                background=display.color,
+                foreground=self._default_swatch_fg,
+            )
+            return
+
+        self.background_color_swatch.configure(
+            text=display.text,
+            background=self._default_swatch_bg,
+            foreground="#b00020" if not display.valid else self._default_swatch_fg,
+        )
 
     def _set_preview_text(self, square: str, rounded: str) -> None:
         self._preview_images = []
