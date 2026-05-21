@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from android_icon_gen.gui import GuiFormState, build_config_from_state
+from android_icon_gen.gui import GuiFormState, background_color_display, build_config_from_state
 
 
 def test_build_config_from_gui_state_maps_blank_optional_fields() -> None:
@@ -29,3 +29,24 @@ def test_build_config_from_gui_state_maps_blank_optional_fields() -> None:
     assert config.background_color is None
     assert config.create_zip is True
     assert config.include_play_icon is False
+
+
+def test_background_color_display_marks_blank_as_auto() -> None:
+    display = background_color_display("")
+
+    assert display.text == "Auto"
+    assert display.color is None
+    assert display.valid is True
+
+
+def test_background_color_display_normalizes_valid_hex_for_swatch() -> None:
+    assert background_color_display("#abc").color == "#aabbcc"
+    assert background_color_display("#11223344").color == "#112233"
+
+
+def test_background_color_display_marks_invalid_values() -> None:
+    display = background_color_display("not-a-color")
+
+    assert display.text == "Invalid"
+    assert display.color is None
+    assert display.valid is False
