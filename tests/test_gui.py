@@ -6,6 +6,7 @@ from android_icon_gen.gui import (
     GuiFormState,
     background_color_display,
     build_config_from_state,
+    output_target_display_values,
     output_target_from_display,
 )
 from android_icon_gen.models import OutputTarget
@@ -64,3 +65,7 @@ def test_output_target_from_display_accepts_labels_and_raw_values() -> None:
     assert output_target_from_display("Android") is OutputTarget.ANDROID
     assert output_target_from_display("Android + Expo") is OutputTarget.BOTH
     assert output_target_from_display("expo") is OutputTarget.EXPO
+
+
+def test_output_target_display_values_uses_human_labels() -> None:
+    assert output_target_display_values() == ("Android", "Expo", "Android + Expo")

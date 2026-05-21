@@ -111,6 +111,12 @@ def output_target_from_display(value: str) -> OutputTarget:
     return OutputTarget(value)
 
 
+def output_target_display_values() -> tuple[str, ...]:
+    """Return human-readable output target labels for GUI controls."""
+
+    return tuple(OUTPUT_TARGET_LABELS.values())
+
+
 class IconGeneratorApp:
     """Desktop app controller and view."""
 
@@ -223,7 +229,7 @@ class IconGeneratorApp:
         ttk.Combobox(
             parent,
             textvariable=self.output_target_var,
-            values=tuple(OUTPUT_TARGETS_BY_LABEL),
+            values=output_target_display_values(),
             state="readonly",
         ).grid(row=row, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=4)
 
