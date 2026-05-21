@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "android-icon-gen"
+version = "0.1.0"
+description = "A desktop and CLI tool for generating Android launcher and Play Store icons."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+authors = [{ name = "SanttuA" }]
+dependencies = [
+    "pillow>=12.0.0",
+]
+
+[project.scripts]
+android-icon-gen = "android_icon_gen.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.0",
+    "pytest>=8.4.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.0",
+]
+
+[tool.uv]
+exclude-newer = "24 hours"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/android_icon_gen"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "SIM", "UP"]
+
+[tool.mypy]
+python_version = "3.14"
+files = ["src", "tests"]
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["PIL.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=android_icon_gen --cov-report=term-missing"
+testpaths = ["tests"]
