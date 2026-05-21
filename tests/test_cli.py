@@ -47,3 +47,41 @@ def test_cli_returns_error_for_invalid_resource_name(
 
     assert exit_code == 1
     assert "Android resource names" in captured.err
+
+
+def test_cli_generate_writes_expo_target(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = tmp_path / "source.png"
+    output_dir = tmp_path / "generated"
+    Image.new("RGBA", (1024, 1024), (0, 128, 255, 255)).save(source)
+
+    exit_code = main(
+        [
+            "generate",
+            str(source),
+            "--output",
+            str(output_dir),
+            "--target",
+            "expo",
+            "--no-zip",
+        ]
+    )
+
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Generated" in captured.out
+    assert (output_dir / "expo/assets/images/icon.png").is_file()
+    assert not (output_dir / "res").exists()
+
+
+def test_cli_rejects_invalid_target(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        main(["generate", "source.png", "--output", "out", "--target", "native"])
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 2
+    assert "invalid choice" in captured.err

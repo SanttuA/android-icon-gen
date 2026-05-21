@@ -8,6 +8,7 @@ from typing import cast
 
 from PIL import Image, ImageChops, ImageDraw, ImageOps
 
+from android_icon_gen.expo import EXPO_FAVICON_SIZE, EXPO_ICON_SIZE
 from android_icon_gen.specs import (
     ADAPTIVE_SAFE_ZONE_FRACTION,
     LEGACY_SAFE_ZONE_FRACTION,
@@ -71,6 +72,13 @@ def color_to_hex(color: Color) -> str:
 
     red, green, blue, _alpha = color
     return f"#{red:02x}{green:02x}{blue:02x}"
+
+
+def opaque_color(color: Color) -> Color:
+    """Return the RGB channels with a fully opaque alpha value."""
+
+    red, green, blue, _alpha = color
+    return red, green, blue, 255
 
 
 def has_transparency(image: Image.Image) -> bool:
@@ -279,3 +287,47 @@ def make_play_store_icon(source: Image.Image, *, background_color: Color) -> Ima
         return flatten_over_color(fitted, background_color)
 
     return resize_to_cover(source, PLAY_STORE_ICON_SIZE)
+
+
+def make_expo_app_icon(
+    source: Image.Image,
+    *,
+    background_color: Color,
+    foreground: Image.Image | None = None,
+    background: Image.Image | None = None,
+) -> Image.Image:
+    """Create an opaque 1024x1024 Expo app icon."""
+
+    color = opaque_color(background_color)
+    icon = make_legacy_icon(
+        source,
+        EXPO_ICON_SIZE,
+        background_color=color,
+        foreground=foreground,
+        background=background,
+    )
+    if has_transparency(icon):
+        return flatten_over_color(icon, color)
+    return icon
+
+
+def make_expo_adaptive_foreground(
+    image: Image.Image,
+    *,
+    explicit_layer: bool,
+) -> Image.Image:
+    """Create a 1024x1024 Expo Android adaptive foreground layer."""
+
+    return make_foreground_layer(image, EXPO_ICON_SIZE, explicit_layer=explicit_layer)
+
+
+def make_expo_splash_icon(image: Image.Image) -> Image.Image:
+    """Create a 1024x1024 transparent Expo splash icon."""
+
+    return resize_to_fit(image, EXPO_ICON_SIZE, fraction=LEGACY_SAFE_ZONE_FRACTION)
+
+
+def make_expo_favicon(image: Image.Image) -> Image.Image:
+    """Create a 48x48 Expo web favicon."""
+
+    return resize_to_fit(image, EXPO_FAVICON_SIZE)

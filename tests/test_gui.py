@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from android_icon_gen.gui import GuiFormState, background_color_display, build_config_from_state
+from android_icon_gen.gui import (
+    GuiFormState,
+    background_color_display,
+    build_config_from_state,
+    output_target_from_display,
+)
+from android_icon_gen.models import OutputTarget
 
 
 def test_build_config_from_gui_state_maps_blank_optional_fields() -> None:
@@ -14,6 +20,7 @@ def test_build_config_from_gui_state_maps_blank_optional_fields() -> None:
         background="background.png",
         monochrome="",
         background_color="",
+        output_target="Expo",
         create_zip=True,
         include_play_icon=False,
     )
@@ -27,6 +34,7 @@ def test_build_config_from_gui_state_maps_blank_optional_fields() -> None:
     assert config.background == Path("background.png")
     assert config.monochrome is None
     assert config.background_color is None
+    assert config.output_target is OutputTarget.EXPO
     assert config.create_zip is True
     assert config.include_play_icon is False
 
@@ -50,3 +58,9 @@ def test_background_color_display_marks_invalid_values() -> None:
     assert display.text == "Invalid"
     assert display.color is None
     assert display.valid is False
+
+
+def test_output_target_from_display_accepts_labels_and_raw_values() -> None:
+    assert output_target_from_display("Android") is OutputTarget.ANDROID
+    assert output_target_from_display("Android + Expo") is OutputTarget.BOTH
+    assert output_target_from_display("expo") is OutputTarget.EXPO

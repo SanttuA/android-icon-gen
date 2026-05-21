@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from android_icon_gen.specs import DEFAULT_ICON_NAME
+
+
+class OutputTarget(StrEnum):
+    """Supported output families."""
+
+    ANDROID = "android"
+    EXPO = "expo"
+    BOTH = "both"
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,6 +30,7 @@ class GenerationConfig:
     background_color: str | None = None
     create_zip: bool = True
     include_play_icon: bool = True
+    output_target: OutputTarget = OutputTarget.ANDROID
 
 
 @dataclass(frozen=True, slots=True)

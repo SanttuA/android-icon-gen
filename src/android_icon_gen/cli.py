@@ -9,7 +9,7 @@ from pathlib import Path
 
 from android_icon_gen.generator import generate_icons
 from android_icon_gen.gui import launch_gui
-from android_icon_gen.models import GenerationConfig
+from android_icon_gen.models import GenerationConfig, OutputTarget
 from android_icon_gen.specs import DEFAULT_ICON_NAME
 
 
@@ -43,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser = subparsers.add_parser("generate", help="generate icons from an image")
     generate_parser.add_argument("source", type=Path, help="source image path")
     generate_parser.add_argument("--output", required=True, type=Path, help="output directory")
+    generate_parser.add_argument(
+        "--target",
+        choices=[target.value for target in OutputTarget],
+        default=OutputTarget.ANDROID.value,
+        help="output target: android resources, Expo assets, or both",
+    )
     generate_parser.add_argument(
         "--name", default=DEFAULT_ICON_NAME, help="Android icon resource name"
     )
@@ -86,6 +92,7 @@ def _run_generate(args: argparse.Namespace) -> int:
         background_color=args.background_color,
         create_zip=args.create_zip,
         include_play_icon=args.include_play_icon,
+        output_target=OutputTarget(args.target),
     )
 
     try:
